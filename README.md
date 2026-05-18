@@ -1,71 +1,45 @@
-# PhishGuard — Hybrid Phishing Email Detection System
+# 📧 Email Threat Classifier
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)
-![SHAP](https://img.shields.io/badge/Explainability-SHAP-6C3483?style=flat-square)
-![License](https://img.shields.io/badge/License-Academic-lightgrey?style=flat-square)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/scikit--learn-1.4-F7931E?style=flat-square&logo=scikit-learn&logoColor=white" />
+  <img src="https://img.shields.io/badge/XGBoost-Planned-orange?style=flat-square" />
+  <img src="https://img.shields.io/badge/DistilBERT-Planned-yellow?style=flat-square" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/SHAP-Explainability-6C3483?style=flat-square" />
+  <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
+</p>
 
-> **Tesina:** *Modelo Híbrido Basado en Análisis de Texto y Metadatos para la Detección de Correos Electrónicos de Phishing*
-> **Autor:** Carlos Daniel Torres Macías · Ingeniería en Computación Inteligente · Universidad Autónoma de Aguascalientes
+> **Extended and iterative version of my undergraduate thesis project.**
+> A hybrid phishing email detection system evolving to combine structural metadata analysis (XGBoost) with deep semantic understanding (DistilBERT), featuring a short-circuit gating mechanism and SHAP-based explainability.
 
----
+## 📌 Project Overview
+This repository is an active evolution of the phishing detection system developed for my Intelligent Computing Engineering thesis. The goal is to iteratively improve the original baseline (Random Forest + Logistic Regression) into an advanced architecture (XGBoost + DistilBERT), documenting each architectural decision as a reproducible step.
 
-## Overview
+Modern phishing attacks are sophisticated enough to bypass rule-based filters. A model that understands both the structural signals (metadata, URL patterns) and the semantic content (email body) is significantly harder to fool. 
 
-PhishGuard is a hybrid machine learning system for phishing email detection using **late fusion with a metadata gating mechanism**. It combines two independent specialized submodels:
-
-- **MetaSubModel** — Random Forest over 32 technical metadata features
-- **TextSubModel** — TF-IDF vectorization + Logistic Regression on cleaned email body text
-
-A weighted fusion engine (`score_final = α·score_meta + (1−α)·score_text`) combines both scores, and a **gating mechanism** short-circuits to a phishing decision when metadata confidence alone exceeds a configurable threshold — reducing unnecessary NLP inference on high-confidence cases.
-
-Explainability is provided via **SHAP TreeExplainer**, propagated through the FastAPI microservice response.
-
----
-
-## Results
-
-| Submodel | ROC-AUC | Recall | F1-Score | Precision |
-|---|---|---|---|---|
-| Technical (Random Forest) | 0.9121 | 0.8117 | 0.8277 | 0.8443 |
-| Semantic (TF-IDF + LR) | **0.9988** | **0.9897** | 0.9871 | 0.9845 |
-
-| Component | Avg Latency |
-|---|---|
-| Base pipeline (no SHAP) | ~15 ms |
-| SHAP overhead | ~12 ms |
-| **Total with explainability** | **< 30 ms** |
-
-SHAP explanations matched human expert judgment in **94%** of evaluated cases.
-
----
-
-## Architecture
-
-```
-email (subject + body)
+## 🏗️ Target Architecture
+```text
+email (subject + body + sender)
         │
         ▼
 ┌───────────────────┐
-│  FeatureExtractor │  → 32 metadata features (heuristic, no-fit)
+│  FeatureExtractor │  → 32 metadata features 
 └───────────────────┘
         │
         ▼
 ┌───────────────────┐
-│  MetaSubModel     │  → score_meta ∈ [0, 1]
-│  (Random Forest)  │
+│  Metadata Model   │  → score_meta ∈ [0, 1]
+│  (XGBoost)        │
 └───────────────────┘
         │
-score_meta ≥ θ_meta? ──── YES ──► label = PHISHING  (gating)
+score_meta ≥ θ_meta? ──── YES ──► label = PHISHING  (gating activation)
         │
         NO
         ▼
 ┌───────────────────┐
-│  TextSubModel     │  → score_text ∈ [0, 1]
-│  (TF-IDF + LR)    │
+│  Semantic Model   │  → score_text ∈ [0, 1]
+│  (DistilBERT)     │
 └───────────────────┘
         │
         ▼
@@ -76,107 +50,28 @@ score_final ≥ θ_final → label ∈ {phishing, legitimate}
         │
         ▼
 SHAP explanation (top-K features → phishing)
+
 ```
 
-**Configured values:** `θ_meta = 0.70` · `α = 0.60` · `θ_final = 0.50`
+## 🗺️ Development Roadmap
 
----
+Each stage is developed in its own branch and merged via Pull Request, ensuring the evolution is traceable in the commit history.
 
-## Quickstart
+| Stage | Branch | Description | Status |
+| --- | --- | --- | --- |
+| 00 | `main` | **Original Baseline:** Random Forest (Metadata) + TF-IDF/Logistic Regression (Text) | ✅ Done |
+| 01 | `feat/01-xgboost-upgrade` | Upgrade metadata submodel to XGBoost | 🔄 In progress |
+| 02 | `feat/02-word-embeddings` | Introduce FastText / Word2Vec semantic features | ⏳ Planned |
+| 03 | `feat/03-distilbert-semantic` | Replace TF-IDF with DistilBERT fine-tuned on email corpus | ⏳ Planned |
+| 04 | `feat/04-dynamic-fusion` | Implement dynamic α weights based on email profile | ⏳ Planned |
+| 05 | `feat/05-docker-compose` | Full containerized deployment | ⏳ Planned |
 
-### Prerequisites
+## 📚 Dataset
 
-```bash
-git lfs install
-git lfs pull
-pip install -r requirements.txt
-```
-
-### 1. Standardize datasets
-
-```bash
-python scripts/standardize_datasets.py
-```
-
-### 2. Create train/val/test splits
-
-```bash
-python scripts/make_splits.py
-```
-
-### 3. Train submodels
-
-```bash
-# Metadata submodel (Random Forest)
-python scripts/train_metadata_model.py
-
-# Text submodel (TF-IDF + Logistic Regression)
-python scripts/train_text_model.py
-```
-
-### 4. Start the API
-
-```bash
-uvicorn phishguard.api.main:app --reload --port 8000
-```
-
-Interactive docs available at `http://localhost:8000/docs`.
-
----
-
-## API Reference
-
-### `GET /health`
-
-```json
-{
-  "status": "ok",
-  "engine_ready": true,
-  "using_dummy_models": false,
-  "meta_model": "RandomForestClassifier_meta_v1.0_20250501T...",
-  "text_model": "TfIdf_LogisticRegression_text_v1.0_..."
-}
-```
-
-### `POST /classify`
-
-```json
-// Request
-{
-  "subject": "URGENT: Verify your PayPal account",
-  "body": "Dear Customer, click here immediately: http://192.168.1.1/login",
-  "sender": "noreply@paypa1-security.tk"
-}
-```
-
-```json
-// Response
-{
-  "label": "phishing",
-  "is_phishing": true,
-  "score_final": 0.8923,
-  "score_meta": 0.9341,
-  "score_text": null,
-  "gating": { "activated": true, "score_meta": 0.9341, "threshold": 0.70 },
-  "latency_ms": 3.2,
-  "explanation": {
-    "has_ip_url": 0.312,
-    "has_url_shortener": 0.201,
-    "body_digit_count": 0.098,
-    "has_urgency_words": 0.044,
-    "has_form": 0.031
-  }
-}
-```
-
----
-
-## Datasets
-
-Seven public datasets were consolidated, deduplicated by MD5 hash, and split into stratified 70/15/15 partitions:
+The baseline utilizes a highly curated, deduplicated corpus of **164,563 records**, consolidated from 7 public datasets and split into stratified 70/15/15 partitions:
 
 | Dataset | Records | Description |
-|---|---|---|
+| --- | --- | --- |
 | phishing_email.csv | ~82k | Primary phishing corpus |
 | Enron.csv | ~33k | Legitimate email corpus |
 | CEAS_08.csv | ~17k | Spam filtering challenge |
@@ -185,98 +80,67 @@ Seven public datasets were consolidated, deduplicated by MD5 hash, and split int
 | Nazario.csv | ~1.5k | Phishing-only corpus |
 | Nigerian_Fraud.csv | ~1k | 419 fraud corpus |
 
-**Final corpus:** 164,563 deduplicated records (408 duplicates removed).
+*Note: Raw CSVs are tracked via Git LFS.*
 
-> Raw CSVs are tracked via **Git LFS**. See [`docs/data_policy.md`](docs/data_policy.md).
+## 🔍 Explainability
 
----
+One of the core goals is not just predicting whether an email is phishing, but explaining *why*. **SHAP (SHapley Additive exPlanations)** is integrated directly into the FastAPI response to:
 
-## Project Structure
+* Identify the top contributing technical features per prediction.
+* Provide exact (not approximated) human-readable justification alongside the model output.
+
+## 🚀 Quickstart
+
+**1. Clone and set up environment**
+
+```bash
+git lfs install
+git clone [https://github.com/YOUR_USERNAME/email-threat-classifier.git](https://github.com/YOUR_USERNAME/email-threat-classifier.git)
+cd email-threat-classifier
+
+python -m venv .venv
+source .venv/bin/activate  # Linux / macOS
+# .venv\Scripts\activate   # Windows
+
+pip install -r requirements.txt
+git lfs pull
 
 ```
-phishguard/
-├── configs/
-│   └── model_config.yaml       # Thresholds, fusion weights, XAI config
-├── data/
-│   ├── raw/                    # Source CSVs (Git LFS)
-│   └── processed/              # Parquet splits (gitignored)
-├── artifacts/                  # Trained model .pkl files (gitignored)
-├── scripts/
-│   ├── standardize_datasets.py # Unify 7 datasets → unified_dataset.parquet
-│   ├── make_splits.py          # Stratified 70/15/15 split with MD5 dedup
-│   ├── train_metadata_model.py # Train Random Forest submodel
-│   └── train_text_model.py     # Train TF-IDF + LR submodel
-├── src/phishguard/
-│   ├── preprocessing/
-│   │   └── text_cleaner.py     # HTML stripping, Unicode normalization, URL extraction
-│   ├── features/
-│   │   └── extractor.py        # 32 metadata features + text preparation
-│   ├── models/
-│   │   ├── fusion_engine.py    # Late fusion engine with gating (PhishGuardEngine)
-│   │   ├── meta_submodel.py    # MetaSubModel wrapper + serialization
-│   │   └── text_submodel.py    # TextSubModel wrapper + serialization
-│   ├── explainability/
-│   │   └── explainer.py        # PhishGuardExplainer (SHAP TreeExplainer)
-│   ├── api/
-│   │   └── main.py             # FastAPI microservice (/health, /classify)
-│   └── config.py               # Pydantic-validated config loader
-└── tests/
-    └── unit/
-        └── test_imports.py
+
+**2. Standardize data and create splits**
+
+```bash
+python scripts/standardize_datasets.py
+python scripts/make_splits.py
+
 ```
 
----
+**3. Train current baseline models**
 
-## Configuration
+```bash
+python scripts/train_metadata_model.py
+python scripts/train_text_model.py
 
-```yaml
-gating:
-  metadata_threshold: 0.70   # θ_meta: short-circuit threshold
-
-fusion:
-  alpha: 0.60                # weight of metadata submodel
-  decision_threshold: 0.50   # θ_final: final decision cutoff
-
-explainability:
-  enabled: true
-  top_k: 10                  # SHAP features to return per prediction
 ```
 
----
+**4. Start API**
 
-## Explainability
+```bash
+uvicorn phishguard.api.main:app --reload --port 8000
 
-PhishGuard uses **SHAP TreeExplainer** (Lundberg et al., 2020, NeurIPS) for the Random Forest submodel. Values are **exact** (not approximations), satisfying local accuracy, consistency, and efficiency properties.
+```
 
-If SHAP is not installed, the system degrades gracefully: predictions continue normally and `explanation` returns `null`.
+Interactive docs available at `http://localhost:8000/docs`.
 
----
+## 🎓 Academic Context
 
-## Tech Stack
+This repository extends the work developed for my undergraduate thesis in Intelligent Computing Engineering at Universidad Autónoma de Aguascalientes (UAA). The original thesis establishes the baseline late-fusion architecture and gating mechanism. This public repo expands on that work iteratively, with an emphasis on transitioning to deep learning architectures, reproducibility, and deployment.
 
-| Layer | Technology |
-|---|---|
-| Language | Python 3.11 |
-| ML | scikit-learn 1.4 (Random Forest, TF-IDF, Logistic Regression) |
-| Explainability | SHAP 0.44 (TreeExplainer) |
-| API | FastAPI 0.110 + Uvicorn |
-| Validation | Pydantic v2 |
-| Serialization | joblib (schema-versioned artifacts) |
-| Data | pandas 2.1, pyarrow, Parquet |
-| CI | GitHub Actions (Python 3.11, Ubuntu latest) |
-| Data versioning | Git LFS |
+## 👤 Author
 
----
+**Carlos Daniel Torres Macías**
+Intelligent Computing Engineering — UAA
 
-## Known Architectural Limitations
+```
 
-1. **Static α** — fusion weight does not adapt to email profile (URL-heavy vs. text-heavy).
-2. **Probability calibration mismatch** — Random Forest emits uncalibrated probabilities; Logistic Regression is intrinsically calibrated. Future work: `CalibratedClassifierCV(cv='prefit')`.
-3. **Monolingual vocabulary** — TF-IDF vocabulary is English-only. Planned extension: multilingual sentence embeddings (LaBSE or `paraphrase-multilingual-MiniLM-L12-v2`).
-
----
-
-## License
-
-Academic project — Universidad Autónoma de Aguascalientes, 2025–2026.
-Dataset usage is subject to each dataset's original license terms.
+```
